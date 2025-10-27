@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import { type Appstate } from '@/types/types';
 import toast from 'react-hot-toast';
 
+const apiUrl = import.meta.env.VITE_API_BASE_URL;
+const WebSocketUrl = import.meta.env.VITE_WEB_SOCKET_URL;
+
 export const useAppStore = create<Appstate>((set, get) => ({
 
     liveFeedEvents: [],
@@ -15,7 +18,7 @@ export const useAppStore = create<Appstate>((set, get) => ({
     userId: `user_${Math.floor(Math.random() * 10000)}`,
 
     initializeWebSocket: () => {
-        const ws = new WebSocket('ws://localhost:3000');
+        const ws = new WebSocket(WebSocketUrl);
 
         ws.onopen = () => {
             console.log('web socket opened');
@@ -54,9 +57,9 @@ export const useAppStore = create<Appstate>((set, get) => ({
         set({ isLoading: true });
         try {
             const [metricsResponse, topEventsResponse, kpisResponse] = await Promise.all([
-                fetch('http://localhost:3000/api/stats/daily-active-users'),
-                fetch('http://localhost:3000/api/stats/top-events'),
-                fetch('http://localhost:3000/api/kpis')
+                fetch(`${apiUrl}stats/daily-active-users`),
+                fetch(`${apiUrl}stats/top-events`),
+                fetch(`${apiUrl}kpis`)
             ]);
 
             const dailyMetricsResult = await metricsResponse.json();
@@ -100,7 +103,7 @@ export const useAppStore = create<Appstate>((set, get) => ({
     fetchInitialFeed: async () => {
         set({ isLoading: true, error: null });
         try {
-            const response = await fetch('http://localhost:3000/api/events');
+            const response = await fetch(`${apiUrl}events`);
             const data = await response.json();
             const events = data?.eventInfo ? [...data.eventInfo] : [];
 
@@ -118,7 +121,7 @@ export const useAppStore = create<Appstate>((set, get) => ({
                 metadata: metadata
             };
 
-            await fetch('http://localhost:3000/api/track', {
+            await fetch(`${apiUrl}track`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(eventPayload),

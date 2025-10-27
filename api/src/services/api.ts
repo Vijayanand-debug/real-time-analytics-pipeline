@@ -16,7 +16,8 @@ export const producerService = async () => {
     app.use(cors());
     app.use(bodyParser.json());
 
-    app.use('/api', router);
+    app.use('/api/services', router);
+    app.use('/health', router);
 
     const server: Server = createServer(app);
 

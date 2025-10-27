@@ -1,0 +1,98 @@
+name: Deploy Analytics App
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy-analytics-app:
+    name: Deploy Analytics App (Backend + Dashboard)
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Configure AWS credentials
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      # Login to Amazon ECR
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Build & push API image
+      - name: Build and push API image
+        id: build-api
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: api-backend
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./api
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      # Build & push Dashboard image
+      - name: Build and push Dashboard image
+        id: build-dashboard
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: dashboard
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./react-dashboard
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      # ECS task definition for API
+      - name: Load task definition for API
+        id: load-api-td
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: backend-task-definition.json
+          container-name: staging-api-container
+          image: ${{ steps.build-api.outputs.image }}
+
+      # ECS task definition for Worker
+      - name: Load task definition for Worker
+        id: load-worker-td
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ steps.load-api-td.outputs.task-definition }}
+          container-name: staging-worker-container
+          image: ${{ steps.build-api.outputs.image }}
+
+      # ECS task definition for Dashboard
+      - name: Load task definition for Dashboard
+        id: load-dashboard-td
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: frontend-task-definition.json
+          container-name: staging-dash-container
+          image: ${{ steps.build-dashboard.outputs.image }}
+
+      # Deploy ECS service for frontend
+      - name: Deploy frontend ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.load-dashboard-td.outputs.task-definition }}
+          service: staging-dash-td-service
+          cluster: carenest-staging-cluster
+          wait-for-service-stability: true
+
+      # Deploy ECS service for backend
+      - name: Deploy backend ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.load-worker-td.outputs.task-definition }}
+          service: staging-api-td-service
+          cluster: carenest-staging-cluster
+          wait-for-service-stability: true
