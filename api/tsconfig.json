@@ -1,0 +1,17 @@
+{
+    "extends": "@tsconfig/node22/tsconfig.json", // taken from github
+    "compilerOptions": {
+        "outDir": "./dist",
+        "rootDir": "./src",
+        // ensures consistent names on all platforms, windows is case insensitive where as linux and macos is case sensitive
+        "forceConsistentCasingInFileNames": true
+    },
+    "includes": [
+        "src/**/*"
+    ],
+    // exclude option by default exclude modules, when you define them it means you are exluding from already included files from the above step,
+    // here src/ all directories and files have been added, so you have to exclude tests directory from the already included list
+    "exclude": [
+        "src/tests/**/*"
+    ]
+}

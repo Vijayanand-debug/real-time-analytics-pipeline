@@ -1,0 +1,114 @@
+services:
+    kafka:
+      image: confluentinc/cp-kafka:7.6.0
+      container_name: kafka
+      ports:
+        - "29092:9092"
+        - "9093:9093"
+      environment:
+        KAFKA_NODE_ID: 1
+        KAFKA_PROCESS_ROLES: 'broker,controller'
+        KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+        KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:9093'
+        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT'
+        KAFKA_LISTENERS: 'INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:29092,CONTROLLER://kafka:9093'
+        KAFKA_ADVERTISED_LISTENERS: 'INTERNAL://kafka:9092,EXTERNAL://localhost:29092'
+        KAFKA_INTER_BROKER_LISTENER_NAME: 'INTERNAL'
+        CLUSTER_ID: 'EApPZwQ590imHYBNIzc2ug=='
+        KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+        KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+        KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+        KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+        KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+      volumes:
+        - kafka_kraft:/var/lib/kafka/data
+
+    postgres:
+      image: postgres:16
+      container_name : postgres
+      restart: always
+      environment: 
+        DB_HOST: 'postgres'
+        POSTGRES_USER: myuser
+        POSTGRES_PASSWORD: mypassword
+        POSTGRES_DB: analytics_data
+      ports:
+        - "5432:5432"
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+        - ./api/src/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+    api:
+      build:
+        context: ./api
+        dockerfile: Dockerfile
+        target: development
+      container_name: api-producer-service
+      ports:
+        - '3000:3000'
+      environment:
+        KAFKA_BROKERS: 'kafka:9092'
+        PORT: 3000
+        PROCESS_TYPE: 'producer'
+        DB_HOST: ${DB_HOST}
+        DB_USER: ${DB_USER}
+        DB_PASSWORD: ${DB_PASSWORD}
+        DB_NAME: ${DB_NAME}
+        DB_PORT: 5432
+        CHOKIDAR_USEPOLLING: "1" 
+      volumes:
+        - ./api:/app
+        - /app/node_modules
+      command: npm run dev
+      depends_on:
+        - kafka
+        - postgres
+      restart: unless-stopped
+
+    worker:
+      build:
+        context: ./api
+        dockerfile: Dockerfile
+        target: development
+      container_name: api-consumer-service
+      environment:
+        KAFKA_BROKERS: 'kafka:9092'
+        PROCESS_TYPE: 'consumer'
+        DB_HOST: ${DB_HOST}
+        DB_USER: ${DB_USER}
+        DB_PASSWORD: ${DB_PASSWORD}
+        DB_NAME: ${DB_NAME}
+        DB_PORT: 5432
+      volumes:
+        - ./api:/app
+        - /app/node_modules
+      command: npm run dev
+      depends_on:
+        - kafka
+        - postgres
+      restart: unless-stopped 
+
+    dashboard:
+      build: 
+        context: ./react-dashboard
+        dockerfile: Dockerfile
+        target: development
+      container_name: dashboard-app
+      ports:
+        - '5173:5173'
+      volumes:
+        - ./react-dashboard:/app
+        - /app/node_modules
+      command: npm run dev
+      networks:
+        - app-network
+        
+    
+volumes:
+  kafka_kraft:   
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge
