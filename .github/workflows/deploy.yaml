@@ -15,6 +15,29 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # Create env files
+      - name: Create .env files
+        run: |
+          # for backend 
+          cat <<EOF > ./api/.env
+          DB_HOST=${{ secrets.DB_HOST }}
+          DB_NAME=${{ secrets.DB_NAME }}
+          DB_USER=${{ secrets.DB_USER }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_PORT=${{ secrets.DB_PORT }}
+          DB_SSL=${{ secrets.DB_SSL }}
+          KAFKA_BROKERS=${{ secrets.KAFKA_BROKERS }}
+          NODE_ENV=production
+          EOF
+
+          # for frontend
+          cat <<EOF > ./react-dashboard/.env
+          VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
+          VITE_WEB_SOCKET_URL=${{ secrets.VITE_WEB_SOCKET_URL }}
+          EOF
+
+          echo ".env files created successfully!"
+
       # Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
