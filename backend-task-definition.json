@@ -23,6 +23,16 @@
                     "protocol": "tcp"
                 }
             ],
+            "environment": [
+                {
+                    "name": "PROCESS_TYPE",
+                    "value": "producer"
+                },
+                {
+                    "name": "NODE_ENV",
+                    "value": "production"
+                }
+            ],
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
@@ -36,6 +46,16 @@
             "name": "staging-worker-container",
             "image": "<IMAGE1_NAME>",
             "essential": false,
+            "environment": [
+                {
+                    "name": "PROCESS_TYPE",
+                    "value": "consumer"
+                },
+                {
+                    "name": "NODE_ENV",
+                    "value": "production"
+                }
+            ],
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
