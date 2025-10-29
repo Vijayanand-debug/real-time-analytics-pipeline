@@ -1,11 +1,11 @@
 {
-    "family": "staging-api-td",
+    "family": "your task definition family",
     "networkMode": "awsvpc",
     "requiresCompatibilities": [
         "FARGATE"
     ],
-    "executionRoleArn": "arn:aws:iam::920411896353:role/ecsTaskExecutionRole",
-    "taskRoleArn": "arn:aws:iam::920411896353:role/ecs-exec-role",
+    "executionRoleArn": "your ecsTaskExecutionRole arn",
+    "taskRoleArn": "your ecs-exec-role arn",
     "cpu": "2048",
     "memory": "6144",
     "runtimePlatform": {
@@ -14,7 +14,7 @@
     },
     "containerDefinitions": [
         {
-            "name": "staging-api-container",
+            "name": "producer container name",
             "image": "<IMAGE1_NAME>",
             "essential": true,
             "portMappings": [
@@ -36,14 +36,14 @@
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
-                    "awslogs-group": "/ecs/staging-api-td",
-                    "awslogs-region": "ap-south-1",
+                    "awslogs-group": "/ecs/",
+                    "awslogs-region": "region",
                     "awslogs-stream-prefix": "ecs"
                 }
             }
         },
         {
-            "name": "staging-worker-container",
+            "name": "worker container name",
             "image": "<IMAGE1_NAME>",
             "essential": false,
             "environment": [
@@ -59,8 +59,8 @@
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
-                    "awslogs-group": "/ecs/staging-api-td",
-                    "awslogs-region": "ap-south-1",
+                    "awslogs-group": "/ecs/",
+                    "awslogs-region": "region",
                     "awslogs-stream-prefix": "ecs"
                 }
             }
