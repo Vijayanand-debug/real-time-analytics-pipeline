@@ -8,6 +8,8 @@ Here’s how all the parts connect:
  - A worker picks them up, saves them to a PostgreSQL database, and sends updates back.
  - Everyone connected sees the live data update right away through WebSockets.
 
+![Application Flow](./demogif.gif)
+
 # Basic Workflow:
 Here’s the basic flow:
 1. React Client
@@ -50,3 +52,10 @@ Here’s the basic flow:
 
 4. To view the app
   - Go to https://localhost:5173
+
+5. Viewing the database
+  - Use DBeaver (or any SQL client) to connect to the database with the following connection url
+    - postgres://myuser:mypassword@localhost:5432/analytics_data
+  - If a table is not created during the docker compose up process, you can manually create the necessary tables by running the schema from the init.sql file.
+    - The init.sql file is located in api/src/db/init.sql
+
