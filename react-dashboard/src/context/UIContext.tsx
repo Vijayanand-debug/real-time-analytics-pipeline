@@ -1,9 +1,9 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 
 type UIContextType = {
-    isModalOpen: boolean,
-    openModal: () => void,
-    closeModal: () => void
+    isModalOpen: boolean;
+    openModal: () => void;
+    closeModal: () => void;
 }
 
 
